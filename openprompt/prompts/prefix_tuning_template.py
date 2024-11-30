@@ -73,6 +73,13 @@ class PrefixTuningTemplate(Template):
             self.n_embd = self.config.n_embd
             self.n_head = self.config.n_head
             self.match_n_decoder_layer = self.n_decoder_layer
+        elif isinstance(self.config, LlamaConfig):  # Adapting for Llama
+            self.n_layer = self.config.num_hidden_layers  # Number of transformer layers
+            self.n_embd = self.config.hidden_size         # Size of the hidden embeddings
+            self.n_head = self.config.num_attention_heads # Number of attention heads
+            self.n_decoder_layer = self.n_layer           # Encoder-decoder parity for LLaMA
+            self.match_n_decoder_layer = self.n_decoder_layer
+            self.match_n_layer = self.n_layer
         self.mid_dim = mid_dim
         self.match_n_head = self.n_head
         self.match_n_embd = self.n_embd // self.n_head
