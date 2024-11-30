@@ -3,7 +3,7 @@ from functools import partial
 from transformers.configuration_utils import PretrainedConfig
 from transformers.models.gpt2.configuration_gpt2 import GPT2Config
 from transformers.models.t5.configuration_t5 import T5Config
-from transformers import LlamaConfig
+from transformers import LlamaConfig, LlamaForCausalLM
 from transformers.models.t5.modeling_t5 import T5ForConditionalGeneration
 from transformers.models.gpt2.modeling_gpt2 import GPT2LMHeadModel
 from openprompt.data_utils import InputFeatures
