@@ -238,6 +238,36 @@ class PrefixTuningTemplate(Template):
 
         elif isinstance(model, GPT2LMHeadModel):
             pass
+        elif isinstance(model, LlamaForCausalLM):  # Check if the model is LLaMA
+            backup_forward_functions = []
+            
+            for i, layer_module in enumerate(model.model.layers):  # LLaMA layers are in `model.layers`
+                backup_forward_functions.append(layer_module.self_attn.forward)
+                
+                def modified_forward(*args, **kwargs):
+                    batch_size = args[0].shape[0]
+                    layer_id = kwargs.pop('layer_id')
+                    device = args[0].device
+                    
+                    # Add or expand past key-value states for LLaMA
+                    if kwargs['past_key_value'] is None:
+                        kwargs['past_key_value'] = self.expand_to_batchsize_for_layer(
+                            self.past_key_values, batch_size, layer_id
+                        ).to(device)
+                    
+                    # Modify attention_mask if necessary
+                    if kwargs['attention_mask'] is not None:
+                        am = kwargs['attention_mask']
+                        kwargs['attention_mask'] = torch.cat(
+                            [-torch.zeros((*am.shape[:-1], self.num_token), dtype=am.dtype, device=am.device), am],
+                            dim=-1
+                        )
+                    
+                    return backup_forward_functions[layer_id](*args, **kwargs)
+                
+                # Replace the forward function with the modified version
+                layer_module.self_attn.forward = partial(modified_forward, layer_id=i)
+
         else:
             raise NotImplementedError
         self.plm_modified = True
